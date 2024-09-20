@@ -185,6 +185,54 @@ func TestOrderedListStartProperty(t *testing.T) {
 	assertMarkdown(t, "ordered list start property", root, expected)
 }
 
+func TestOrderedListStartZeroClampsToOne(t *testing.T) {
+	root := NewNode(NodeRoot)
+	list := NewNode(NodeList)
+	list.SetData(NDK_Ordered, true)
+	list.SetData(NDK_Start, 0)
+
+	item := NewNode(NodeListItem)
+	item.AddFlowChild(createParagraphNode("First item"))
+	list.AddListChild(item)
+	root.AddFlowChild(list)
+
+	expected := "1. First item\n\n"
+	assertMarkdown(t, "ordered list start zero clamps to one", root, expected)
+}
+
+func TestListSpreadSeparatesItemsWithBlankLines(t *testing.T) {
+	root := NewNode(NodeRoot)
+	list := NewNode(NodeList)
+	list.SetData(NDK_Spread, true)
+
+	item1 := NewNode(NodeListItem)
+	item1.AddFlowChild(createParagraphNode("First item"))
+	list.AddListChild(item1)
+
+	item2 := NewNode(NodeListItem)
+	item2.AddFlowChild(createParagraphNode("Second item"))
+	list.AddListChild(item2)
+	root.AddFlowChild(list)
+
+	expected := "- First item\n\n- Second item\n\n"
+	assertMarkdown(t, "list spread separates items with blank lines", root, expected)
+}
+
+func TestListItemSpreadSeparatesChildrenWithBlankLines(t *testing.T) {
+	root := NewNode(NodeRoot)
+	list := NewNode(NodeList)
+
+	item := NewNode(NodeListItem)
+	item.SetData(NDK_Spread, true)
+	item.AddFlowChild(createParagraphNode("First paragraph"))
+	item.AddFlowChild(createParagraphNode("Second paragraph"))
+	list.AddListChild(item)
+	root.AddFlowChild(list)
+
+	expected := "- First paragraph\n\n  Second paragraph\n\n"
+	assertMarkdown(t, "list item spread separates children with blank lines", root, expected)
+}
+
 func TestListWithInvalidChild(t *testing.T) {
 	root := NewNode(NodeRoot)
 	list := NewNode(NodeList)

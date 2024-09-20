@@ -73,8 +73,9 @@ Output:
   breaks, link/image references, footnote references, and the package's
   `NodeFootnote` inline helper.
 - List rendering follows mdast defaults: missing `ordered` renders unordered
-  lists, ordered `start` is honored, and list/listItem `spread` controls blank
-  line separation.
+  lists, positive ordered `start` values are honored, missing or `<1` `start`
+  values render from `1`, and list/listItem `spread` controls blank line
+  separation.
 
 ## Validation
 
