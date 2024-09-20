@@ -113,8 +113,10 @@ func linkReferenceToMarkdown(ctx context.Context, n *Node) (string, error) {
 		return fmt.Sprintf("[%s]", label), nil
 	case ReferenceCollapsed:
 		return fmt.Sprintf("[%s][]", label), nil
-	default: // full
+	case ReferenceFull:
 		return fmt.Sprintf("[%s][%s]", label, identifier), nil
+	default:
+		return "", fmt.Errorf("unknown reference type for link reference: %s", referenceType)
 	}
 }
 
@@ -139,8 +141,10 @@ func imageReferenceToMarkdown(ctx context.Context, n *Node) (string, error) {
 		return fmt.Sprintf("![%s]", alt), nil
 	case ReferenceCollapsed:
 		return fmt.Sprintf("![%s][]", alt), nil
-	default: // full
+	case ReferenceFull:
 		return fmt.Sprintf("![%s][%s]", alt, identifier), nil
+	default:
+		return "", fmt.Errorf("unknown reference type for image reference: %s", referenceType)
 	}
 }
 

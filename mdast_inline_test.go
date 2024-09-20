@@ -100,3 +100,28 @@ func TestAdditionalInlineElements(t *testing.T) {
 
 	RunTestCases(t, testCases)
 }
+
+func TestReferenceElementsRejectUnknownReferenceType(t *testing.T) {
+	testCases := []struct {
+		name      string
+		node      *Node
+		wantError string
+	}{
+		{
+			name:      "LinkReference",
+			node:      createLinkReferenceNode("ref", "Link", ReferenceType("invalid")),
+			wantError: "unknown reference type for link reference",
+		},
+		{
+			name:      "ImageReference",
+			node:      createImageReferenceNode("ref", "Alt text", ReferenceType("invalid")),
+			wantError: "unknown reference type for image reference",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assertMarkdownErrorContains(t, tc.name, tc.node, tc.wantError)
+		})
+	}
+}
