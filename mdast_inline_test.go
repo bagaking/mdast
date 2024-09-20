@@ -54,13 +54,40 @@ func TestInlineElements(t *testing.T) {
 		{"Strong", &Node{Type: NodeStrong, PhrasingChildren: []PhrasingContent{&Node{Type: NodeText, Value: "strong"}}}, "**strong**", false},
 		{"Delete", &Node{Type: NodeDelete, PhrasingChildren: []PhrasingContent{&Node{Type: NodeText, Value: "deleted"}}}, "~~deleted~~", false},
 		{"InlineCode", &Node{Type: NodeInlineCode, Value: "code"}, "`code`", false},
-		{"InlineCode with backticks", &Node{Type: NodeInlineCode, Value: "code with ` backticks"}, "`code with ` backticks`", false},
+		{"InlineCode with backtick", &Node{Type: NodeInlineCode, Value: "code with ` backtick"}, "``code with ` backtick``", false},
 		{"Link", createLinkNode("Example", "https://example.com"), "[Example](https://example.com)", false},
 		{"Link with title", createLinkNodeWithTitle("Example", "https://example.com", "Title"), "[Example](https://example.com \"Title\")", false},
 		{"Image", createImageNode("Alt text", "https://example.com/image.png"), "![Alt text](https://example.com/image.png)", false},
 		{"Image with title", createImageNodeWithTitle("Alt text", "https://example.com/image.png", "Title"), "![Alt text](https://example.com/image.png \"Title\")", false},
 		{"Break", NewNode(NodeBreak), "\n", false},
 		{"Nested Inline", createNestedInlineParagraph(), "This is *emphasized and **strong** text* with `code`\n\n", false},
+	}
+
+	RunTestCases(t, testCases)
+}
+
+func TestInlineCodeBacktickDelimiters(t *testing.T) {
+	testCases := []TestCase{
+		{
+			Name:     "longest backtick run selects longer delimiter",
+			Node:     &Node{Type: NodeInlineCode, Value: "uses `` inside"},
+			Expected: "```uses `` inside```",
+		},
+		{
+			Name:     "leading backtick is padded",
+			Node:     &Node{Type: NodeInlineCode, Value: "`leading"},
+			Expected: "`` `leading ``",
+		},
+		{
+			Name:     "trailing backtick is padded",
+			Node:     &Node{Type: NodeInlineCode, Value: "trailing`"},
+			Expected: "`` trailing` ``",
+		},
+		{
+			Name:     "only backticks are padded",
+			Node:     &Node{Type: NodeInlineCode, Value: "``"},
+			Expected: "``` `` ```",
+		},
 	}
 
 	RunTestCases(t, testCases)

@@ -34,7 +34,7 @@ func InlineToMarkdown(ctx context.Context, n *Node) (string, error) {
 	case NodeImage:
 		return imageToMarkdown(ctx, n)
 	case NodeInlineCode:
-		return "`" + n.Value + "`", nil
+		return inlineCodeToMarkdown(n.Value), nil
 	case NodeBreak:
 		return "\n", nil
 	case NodeLinkReference:
@@ -52,6 +52,30 @@ func InlineToMarkdown(ctx context.Context, n *Node) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown inline node type: %s", n.Type)
 	}
+}
+
+func inlineCodeToMarkdown(value string) string {
+	delimiter := strings.Repeat("`", longestBacktickRun(value)+1)
+	if strings.HasPrefix(value, "`") || strings.HasSuffix(value, "`") {
+		return delimiter + " " + value + " " + delimiter
+	}
+	return delimiter + value + delimiter
+}
+
+func longestBacktickRun(value string) int {
+	longest := 0
+	current := 0
+	for _, r := range value {
+		if r == '`' {
+			current++
+			if current > longest {
+				longest = current
+			}
+			continue
+		}
+		current = 0
+	}
+	return longest
 }
 
 func linkToMarkdown(ctx context.Context, n *Node) (string, error) {
