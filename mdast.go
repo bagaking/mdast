@@ -101,7 +101,7 @@ func (n *Node) ToMarkdown(ctx context.Context) (string, error) {
 	case NodeText, NodeEmphasis, NodeStrong, NodeDelete, NodeLink,
 		NodeImage, NodeInlineCode, NodeBreak,
 		NodeLinkReference, NodeImageReference,
-		NodeFootnoteReference:
+		NodeFootnoteReference, NodeFootnote:
 		return InlineToMarkdown(ctx, n)
 	default:
 		return "", fmt.Errorf("unknown node type: %s", n.Type)

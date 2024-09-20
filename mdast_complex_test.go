@@ -3,10 +3,7 @@ package mdast
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestComplexStructure(t *testing.T) {
@@ -21,17 +18,13 @@ func TestComplexStructure(t *testing.T) {
 	root.AddFlowChild(para)
 
 	expected := "## Title\n\nThis is a **test** paragraph.\n\n"
-	result, err := root.ToMarkdown(context.Background())
-	assert.NoError(t, err, "Unexpected error")
-	assert.Equal(t, expected, result, "Complex structure conversion should match")
+	assertMarkdown(t, "complex structure", root, expected)
 }
 
 func TestTableWithAlignment(t *testing.T) {
 	node := createTableNodeWithAlignment()
 	expected := "| Left | Center | Right |\n| :--- | :---: | ---: |\n| 1 | 2 | 3 |\n\n"
-	result, err := node.ToMarkdown(context.Background())
-	assert.NoError(t, err, "Unexpected error")
-	assert.Equal(t, expected, result, "Table with alignment should convert correctly")
+	assertMarkdown(t, "table with alignment", node, expected)
 }
 
 func TestDeepNestedStructure(t *testing.T) {
@@ -45,21 +38,19 @@ func TestDeepNestedStructure(t *testing.T) {
 
 	thirdLevel := NewNode(NodeList)
 	thirdLevel.SetData(NDK_Ordered, true)
-	thirdLevel.AddListChild(createListNode(true, "Third level item"))
+	thirdLevelItem := NewNode(NodeListItem)
+	thirdLevelItem.AddFlowChild(createParagraphNode("Third level item"))
+	thirdLevel.AddListChild(thirdLevelItem)
 	secondLevel.AddFlowChild(thirdLevel)
 
-	expected := "# First level\n\n> ## Second level\n> \n> 1. Third level item\n\n"
-	result, err := root.ToMarkdown(context.Background())
-	assert.NoError(t, err, "Unexpected error")
-	assert.Equal(t, expected, result, "Deep nested structure should convert correctly")
+	expected := "# First level\n\n> ## Second level\n>\n> 1. Third level item\n\n"
+	assertMarkdown(t, "deep nested structure", root, expected)
 }
 
 func TestComplexDocument(t *testing.T) {
 	doc := createComplexDocument()
-	expected := "# Complex Document\n\n## Introduction\n\nThis is a *complex* document with various elements:\n\n1. Lists\n2. Tables\n3. Code blocks\n\n### Lists\n\n- Unordered item 1\n- Unordered item 2\n  1. Nested ordered item\n  2. Another nested item\n\n### Table\n\n| Header 1 | Header 2 | Header 3 |\n| :--- | :---: | ---: |\n| Left | Center | Right |\n| Data | Data | Data |\n\n### Code\n\n```go\nfunc main() {\n    fmt.Println(\"Hello, world!\")\n}\n```\n\n> This is a blockquote with a [link](https://example.com).\n\nFootnote reference[^1]\n\n[^1]: This is a footnote.\n\n"
-	result, err := doc.ToMarkdown(context.Background())
-	assert.NoError(t, err, "Unexpected error")
-	assert.Equal(t, expected, result, "Complex document should convert correctly")
+	expected := "# Complex Document\n\n## Introduction\n\nThis is a *complex* document with various elements:\n\n1. Lists\n2. Tables\n3. Code blocks\n\n### Lists\n\n1. First item\n2. Second item with *emphasis*\n   - Subitem\n\n### Table\n\n| Left | Center | Right |\n| :--- | :---: | ---: |\n| 1 | 2 | 3 |\n\n### Code\n\n```go\nfunc main() {\n    fmt.Println(\"Hello, world!\")\n}\n```\n\n> This is a blockquote with a [link](https://example.com).\n\nFootnote reference[^1]\n\n[^1]: This is a footnote.\n\n"
+	assertMarkdown(t, "complex document", doc, expected)
 }
 
 func ExampleNode_ToMarkdown_complexStructure() {
@@ -73,16 +64,9 @@ func ExampleNode_ToMarkdown_complexStructure() {
 	para.AddPhrasingChild(&Node{Type: NodeText, Value: " elements."})
 	root.AddFlowChild(para)
 
-	// 添加调试信息
-	fmt.Fprintf(os.Stderr, "Root node type: %s\n", root.Type)
-	fmt.Fprintf(os.Stderr, "Number of children: %d\n", len(root.FlowChildren))
-	for i, child := range root.FlowChildren {
-		fmt.Fprintf(os.Stderr, "Child %d type: %s\n", i, child.GetType())
-	}
-
 	markdown, err := root.ToMarkdown(context.Background())
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Printf("Error: %v\n", err)
 		return
 	}
 	fmt.Print(markdown)
@@ -121,8 +105,12 @@ func createComplexDocument() *Node {
 	doc.AddFlowChild(createHeadingNode(3, "Code"))
 	doc.AddFlowChild(createCodeNode("go", "func main() {\n    fmt.Println(\"Hello, world!\")\n}"))
 
-	quote := createBlockquoteNode("This is a blockquote with a ")
-	quote.AddFlowChild(createLinkNode("link", "https://example.com"))
+	quote := NewNode(NodeBlockquote)
+	quoteParagraph := NewNode(NodeParagraph)
+	quoteParagraph.AddPhrasingChild(&Node{Type: NodeText, Value: "This is a blockquote with a "})
+	quoteParagraph.AddPhrasingChild(createLinkNode("link", "https://example.com"))
+	quoteParagraph.AddPhrasingChild(&Node{Type: NodeText, Value: "."})
+	quote.AddFlowChild(quoteParagraph)
 	doc.AddFlowChild(quote)
 
 	doc.AddFlowChild(&Node{
@@ -161,24 +149,40 @@ func TestComplexListStructure(t *testing.T) {
 
 	root.AddFlowChild(list)
 
-	expected := "1. First level ordered item\n\n   - Second level unordered item\n\n2. Another first level item\n\n"
-	result, err := root.ToMarkdown(context.Background())
-	assert.NoError(t, err, "Unexpected error")
-	assert.Equal(t, expected, result, "Complex list structure should convert correctly")
+	expected := "1. First level ordered item\n   - Second level unordered item\n2. Another first level item\n\n"
+	assertMarkdown(t, "complex list structure", root, expected)
 }
 
-func TestListWithMissingOrderedProperty(t *testing.T) {
+func TestListWithoutOrderedPropertyDefaultsToUnordered(t *testing.T) {
 	root := NewNode(NodeRoot)
 	list := NewNode(NodeList)
-	// 故意不设置 NDK_Ordered 属性
 	item := NewNode(NodeListItem)
 	item.AddFlowChild(createParagraphNode("Test item"))
 	list.AddListChild(item)
 	root.AddFlowChild(list)
 
-	_, err := root.ToMarkdown(context.Background())
-	assert.Error(t, err, "Expected an error due to missing 'ordered' property")
-	assert.Contains(t, err.Error(), "missing required 'ordered' property for list")
+	expected := "- Test item\n\n"
+	assertMarkdown(t, "list without ordered property", root, expected)
+}
+
+func TestOrderedListStartProperty(t *testing.T) {
+	root := NewNode(NodeRoot)
+	list := NewNode(NodeList)
+	list.SetData(NDK_Ordered, true)
+	list.SetData(NDK_Start, 3)
+
+	item1 := NewNode(NodeListItem)
+	item1.AddFlowChild(createParagraphNode("Third item"))
+	list.AddListChild(item1)
+
+	item2 := NewNode(NodeListItem)
+	item2.AddFlowChild(createParagraphNode("Fourth item"))
+	list.AddListChild(item2)
+
+	root.AddFlowChild(list)
+
+	expected := "3. Third item\n4. Fourth item\n\n"
+	assertMarkdown(t, "ordered list start property", root, expected)
 }
 
 func TestListWithInvalidChild(t *testing.T) {
@@ -189,7 +193,5 @@ func TestListWithInvalidChild(t *testing.T) {
 	list.AddListChild(createParagraphNode("Invalid child"))
 	root.AddFlowChild(list)
 
-	_, err := root.ToMarkdown(context.Background())
-	assert.Error(t, err, "Expected an error due to invalid child node")
-	assert.Contains(t, err.Error(), "unexpected node type in list")
+	assertMarkdownErrorContains(t, "invalid list child", root, "unexpected node type in list")
 }

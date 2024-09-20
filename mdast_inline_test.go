@@ -20,7 +20,17 @@ func createImageNodeWithTitle(alt, url, title string) *Node {
 }
 
 func createNestedInlineNode() *Node {
-	node := NewNode(NodeParagraph) // 使用 NodeParagraph
+	node := NewNode(NodeEmphasis)
+	node.AddPhrasingChild(&Node{Type: NodeText, Value: "emphasized and "})
+	strong := &Node{Type: NodeStrong}
+	strong.AddPhrasingChild(&Node{Type: NodeText, Value: "strong"})
+	node.AddPhrasingChild(strong)
+	node.AddPhrasingChild(&Node{Type: NodeText, Value: " text"})
+	return node
+}
+
+func createNestedInlineParagraph() *Node {
+	node := NewNode(NodeParagraph)
 	node.AddPhrasingChild(&Node{Type: NodeText, Value: "This is "})
 	emphasis := &Node{Type: NodeEmphasis}
 	emphasis.AddPhrasingChild(&Node{Type: NodeText, Value: "emphasized and "})
@@ -50,7 +60,7 @@ func TestInlineElements(t *testing.T) {
 		{"Image", createImageNode("Alt text", "https://example.com/image.png"), "![Alt text](https://example.com/image.png)", false},
 		{"Image with title", createImageNodeWithTitle("Alt text", "https://example.com/image.png", "Title"), "![Alt text](https://example.com/image.png \"Title\")", false},
 		{"Break", NewNode(NodeBreak), "\n", false},
-		{"Nested Inline", createNestedInlineNode(), "This is *emphasized and **strong** text* with `code`", false},
+		{"Nested Inline", createNestedInlineParagraph(), "This is *emphasized and **strong** text* with `code`\n\n", false},
 	}
 
 	RunTestCases(t, testCases)
@@ -68,14 +78,16 @@ func ExampleNode_ToMarkdown_emphasis() {
 }
 
 func ExampleNode_ToMarkdown_nestedInline() {
-	node := createNestedInlineNode()
+	node := createNestedInlineParagraph()
 	result, err := node.ToMarkdown(context.Background())
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 	fmt.Print(result)
-	// Output: This is *emphasized and **strong** text* with `code`
+	// Output:
+	// This is *emphasized and **strong** text* with `code`
+	//
 }
 
 func TestAdditionalInlineElements(t *testing.T) {

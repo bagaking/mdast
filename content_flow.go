@@ -29,8 +29,8 @@ func FlowToMarkdown(ctx context.Context, n *Node) (string, error) {
 		return footnoteDefinitionToMarkdown(ctx, n)
 	case NodeList:
 		return ListToMarkdown(ctx, n)
-	case NodeFootnote:
-		return footnoteToMarkdown(ctx, n)
+	case NodeTable:
+		return TableToMarkdown(ctx, n)
 	default:
 		return "", fmt.Errorf("unknown flow node type: %s", n.Type)
 	}

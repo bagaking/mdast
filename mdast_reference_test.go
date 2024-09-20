@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestReferenceElements(t *testing.T) {
@@ -27,11 +25,16 @@ func TestReferenceElements(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			result, err := tc.Node.ToMarkdown(context.Background())
 			if tc.ExpectErr {
-				assert.Error(t, err, "Expected an error but got none")
+				if err == nil {
+					t.Fatalf("Node.ToMarkdown(%s) error = nil, want error", tc.Name)
+				}
 			} else {
-				assert.NoError(t, err, "Unexpected error")
-				fmt.Printf("Debug: Test case '%s'\nExpected: %q\nActual: %q\n", tc.Name, tc.Expected, result)
-				assert.Equal(t, tc.Expected, result, "Markdown conversion should match")
+				if err != nil {
+					t.Fatalf("Node.ToMarkdown(%s) error = %v, want nil", tc.Name, err)
+				}
+				if result != tc.Expected {
+					t.Errorf("Node.ToMarkdown(%s) = %q, want %q", tc.Name, result, tc.Expected)
+				}
 			}
 		})
 	}
@@ -52,8 +55,12 @@ func TestReferenceTypes(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			node := createLinkReferenceNode("id", "Link", tc.referenceType)
 			result, err := node.ToMarkdown(context.Background())
-			assert.NoError(t, err, "Unexpected error")
-			assert.Equal(t, tc.expected, result, "Link reference should convert correctly")
+			if err != nil {
+				t.Fatalf("Node.ToMarkdown(%s) error = %v, want nil", tc.name, err)
+			}
+			if result != tc.expected {
+				t.Errorf("Node.ToMarkdown(%s) = %q, want %q", tc.name, result, tc.expected)
+			}
 		})
 	}
 }

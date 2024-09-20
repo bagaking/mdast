@@ -2,35 +2,65 @@ package mdast
 
 import (
 	"context"
+	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
-// TestCase 定义了一个通用的测试用例结构
+// TestCase defines a markdown rendering test case.
 type TestCase struct {
 	Name      string
 	Node      *Node
 	Expected  string
-	ExpectErr bool // 新增字段，表示是否期望错误
+	ExpectErr bool
 }
 
-// RunTestCases 运行一组测试用例
+// RunTestCases runs markdown rendering test cases.
 func RunTestCases(t *testing.T, testCases []TestCase) {
+	t.Helper()
+
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
 			result, err := tc.Node.ToMarkdown(context.Background())
 			if tc.ExpectErr {
-				assert.Error(t, err, "Expected an error but got none")
-			} else {
-				assert.NoError(t, err, "Unexpected error")
-				assert.Equal(t, tc.Expected, result, "Markdown conversion should match")
+				if err == nil {
+					t.Fatalf("Node.ToMarkdown(%s) error = nil, want error", tc.Name)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("Node.ToMarkdown(%s) error = %v, want nil", tc.Name, err)
+			}
+			if result != tc.Expected {
+				t.Errorf("Node.ToMarkdown(%s) = %q, want %q", tc.Name, result, tc.Expected)
 			}
 		})
 	}
 }
 
-// 辅助函数
+func assertMarkdown(t *testing.T, name string, node *Node, want string) {
+	t.Helper()
+
+	got, err := node.ToMarkdown(context.Background())
+	if err != nil {
+		t.Fatalf("Node.ToMarkdown(%s) error = %v, want nil", name, err)
+	}
+	if got != want {
+		t.Errorf("Node.ToMarkdown(%s) = %q, want %q", name, got, want)
+	}
+}
+
+func assertMarkdownErrorContains(t *testing.T, name string, node *Node, want string) {
+	t.Helper()
+
+	_, err := node.ToMarkdown(context.Background())
+	if err == nil {
+		t.Fatalf("Node.ToMarkdown(%s) error = nil, want error containing %q", name, want)
+	}
+	if !strings.Contains(err.Error(), want) {
+		t.Errorf("Node.ToMarkdown(%s) error = %q, want containing %q", name, err.Error(), want)
+	}
+}
+
 func createLinkNode(text, url string) *Node {
 	node := NewNode(NodeLink)
 	node.SetData(NDK_URL, url)
@@ -146,7 +176,6 @@ func createTableNodeWithAlignment() *Node {
 	return node
 }
 
-// 添加新的辅助函数
 func createComplexParagraph() *Node {
 	para := NewNode(NodeParagraph)
 	para.AddPhrasingChild(&Node{Type: NodeText, Value: "This is a "})
@@ -185,27 +214,24 @@ func createComplexList() *Node {
 	return list
 }
 
-// createNestedListNode 创建一个嵌套列表节点
 func createNestedListNode() *Node {
 	list := NewNode(NodeList)
 	list.SetData(NDK_Ordered, false)
 
 	item1 := NewNode(NodeListItem)
-	// 使用 NodeParagraph 创建段落
 	para1 := NewNode(NodeParagraph)
 	para1.AddPhrasingChild(&Node{Type: NodeText, Value: "Item 1"})
 	item1.AddFlowChild(para1)
 
 	subList := NewNode(NodeList)
+	subList.SetData(NDK_Ordered, false)
 	subItem1 := NewNode(NodeListItem)
-	// 使用 NodeParagraph 创建段落
 	paraSub1 := NewNode(NodeParagraph)
 	paraSub1.AddPhrasingChild(&Node{Type: NodeText, Value: "Subitem 1"})
 	subItem1.AddFlowChild(paraSub1)
 	subList.AddListChild(subItem1)
 
 	subItem2 := NewNode(NodeListItem)
-	// 使用 NodeParagraph 创建段落
 	paraSub2 := NewNode(NodeParagraph)
 	paraSub2.AddPhrasingChild(&Node{Type: NodeText, Value: "Subitem 2"})
 	subItem2.AddFlowChild(paraSub2)
@@ -215,7 +241,6 @@ func createNestedListNode() *Node {
 	list.AddListChild(item1)
 
 	item2 := NewNode(NodeListItem)
-	// 使用 NodeParagraph 创建段落
 	para2 := NewNode(NodeParagraph)
 	para2.AddPhrasingChild(&Node{Type: NodeText, Value: "Item 2"})
 	item2.AddFlowChild(para2)
@@ -224,7 +249,6 @@ func createNestedListNode() *Node {
 	return list
 }
 
-// createComplexTableNode 创建一个复杂的表格节点
 func createComplexTableNode() *Node {
 	table := NewNode(NodeTable)
 	row1 := NewNode(NodeTableRow)
@@ -242,7 +266,6 @@ func createComplexTableNode() *Node {
 	return table
 }
 
-// createComplexBlockquoteNode 创建一个复杂的引用节点
 func createComplexBlockquoteNode() *Node {
 	blockquote := NewNode(NodeBlockquote)
 	blockquote.AddFlowChild(createHeadingNode(1, "Quoted heading"))
@@ -252,7 +275,6 @@ func createComplexBlockquoteNode() *Node {
 	return blockquote
 }
 
-// createMixedBlockElements 创建一个混合块元素节点
 func createMixedBlockElements() *Node {
 	root := NewNode(NodeRoot)
 	root.AddFlowChild(createHeadingNode(1, "Heading"))
@@ -263,7 +285,6 @@ func createMixedBlockElements() *Node {
 	return root
 }
 
-// createParagraphNode 创建一个段落节点
 func createParagraphNode(content string) *Node {
 	paragraph := NewNode(NodeParagraph)
 	paragraph.AddPhrasingChild(&Node{Type: NodeText, Value: content})

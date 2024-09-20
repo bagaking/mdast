@@ -94,7 +94,7 @@ func (nt NodeType) IsBlock() bool {
 // IsInline 检查节点是否为内联元素
 func (nt NodeType) IsInline() bool {
 	switch nt {
-	case NodeText, NodeEmphasis, NodeStrong, NodeDelete, NodeLink, NodeImage, NodeInlineCode, NodeBreak, NodeFootnoteReference:
+	case NodeText, NodeEmphasis, NodeStrong, NodeDelete, NodeLink, NodeImage, NodeInlineCode, NodeBreak, NodeFootnoteReference, NodeFootnote:
 		return true
 	default:
 		return false

@@ -8,36 +8,33 @@ import (
 
 // ListToMarkdown 将列表内容转换为 Markdown
 func ListToMarkdown(ctx context.Context, n *Node) (string, error) {
-	var result strings.Builder
-	ordered, ok := n.Data.GetBool(NDK_Ordered)
-	if !ok {
-		return "", fmt.Errorf("missing required 'ordered' property for list")
-	}
-	// spread is optional, thus we don't need to check it
+	ordered, _ := n.Data.GetBool(NDK_Ordered)
 	spread, _ := n.Data.GetBool(NDK_Spread)
+	start, ok := n.Data.GetInt(NDK_Start)
+	if !ok || start < 1 {
+		start = 1
+	}
 
+	lines := make([]string, 0, len(n.ListChildren))
 	for i, child := range n.ListChildren {
 		if child.GetType() != NodeListItem {
 			return "", fmt.Errorf("unexpected node type in list: %s", child.GetType())
 		}
-		itemContent, err := listItemToMarkdown(ctx, child.(*Node), i+1, ordered, spread)
+		itemContent, err := listItemToMarkdown(ctx, child.(*Node), start+i, ordered)
 		if err != nil {
 			return "", fmt.Errorf("error processing list item: %w", err)
 		}
-		result.WriteString(itemContent)
-		if i < len(n.ListChildren)-1 {
-			if spread {
-				result.WriteString("\n\n")
-			} else {
-				result.WriteString("\n")
-			}
-		}
+		lines = append(lines, itemContent)
 	}
-	return result.String() + "\n", nil
+
+	separator := "\n"
+	if spread {
+		separator = "\n\n"
+	}
+	return strings.Join(lines, separator) + "\n\n", nil
 }
 
-func listItemToMarkdown(ctx context.Context, n *Node, index int, ordered bool, spread bool) (string, error) {
-	indent := "   "
+func listItemToMarkdown(ctx context.Context, n *Node, index int, ordered bool) (string, error) {
 	var prefix string
 	if ordered {
 		prefix = fmt.Sprintf("%d. ", index)
@@ -45,33 +42,41 @@ func listItemToMarkdown(ctx context.Context, n *Node, index int, ordered bool, s
 		prefix = "- "
 	}
 
-	var result strings.Builder
-	result.WriteString(prefix)
-
-	for i, child := range n.FlowChildren {
-		if i > 0 {
-			if spread {
-				result.WriteString("\n\n" + strings.Repeat(" ", len(prefix)))
-			} else {
-				result.WriteString("\n" + strings.Repeat(" ", len(prefix)))
-			}
+	parts := make([]string, 0, len(n.FlowChildren)+1)
+	if len(n.PhrasingChildren) > 0 {
+		content, err := phrasingChildrenToMarkdown(ctx, n)
+		if err != nil {
+			return "", err
 		}
+		parts = append(parts, content)
+	}
+
+	for _, child := range n.FlowChildren {
 		childContent, err := FlowToMarkdown(ctx, child.(*Node))
 		if err != nil {
 			return "", fmt.Errorf("error processing list item child: %w", err)
 		}
-		if child.GetType() == NodeList {
-			childLines := strings.Split(strings.TrimRight(childContent, "\n"), "\n")
-			for j, line := range childLines {
-				if j > 0 {
-					result.WriteString("\n" + indent + strings.Repeat(" ", len(prefix)))
-				}
-				result.WriteString(line)
-			}
-		} else {
-			result.WriteString(strings.TrimSpace(childContent))
-		}
+		parts = append(parts, strings.TrimSpace(childContent))
 	}
 
-	return result.String(), nil
+	separator := "\n"
+	if spread, _ := n.Data.GetBool(NDK_Spread); spread {
+		separator = "\n\n"
+	}
+	content := strings.Join(parts, separator)
+	if content == "" {
+		return strings.TrimSpace(prefix), nil
+	}
+
+	return prefix + indentContinuation(content, len(prefix)), nil
+}
+
+func indentContinuation(content string, width int) string {
+	lines := strings.Split(content, "\n")
+	for i := 1; i < len(lines); i++ {
+		if lines[i] != "" {
+			lines[i] = strings.Repeat(" ", width) + lines[i]
+		}
+	}
+	return strings.Join(lines, "\n")
 }
