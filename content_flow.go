@@ -75,7 +75,8 @@ func codeToMarkdown(ctx context.Context, n *Node) (string, error) {
 	if meta != "" {
 		lang += " " + meta
 	}
-	return "```" + lang + "\n" + n.Value + "\n```\n\n", nil
+	delimiter := strings.Repeat("`", max(3, longestBacktickRun(n.Value)+1))
+	return delimiter + lang + "\n" + n.Value + "\n" + delimiter + "\n\n", nil
 }
 
 func htmlToMarkdown(ctx context.Context, n *Node) (string, error) {

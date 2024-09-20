@@ -19,6 +19,7 @@ func TestBlockElements(t *testing.T) {
 		{"Table", createTableNode(), "| Cell 1 | Cell 2 |\n| --- | --- |\n\n", false},
 		{"Code", createCodeNode("javascript", "console.log('Hello');"), "```javascript\nconsole.log('Hello');\n```\n\n", false},
 		{"Code without language", createCodeNode("", "print('Hello')"), "```\nprint('Hello')\n```\n\n", false},
+		{"Code with backtick fence", createCodeNode("markdown", "```go\nfmt.Println(\"nested\")\n```"), "````markdown\n```go\nfmt.Println(\"nested\")\n```\n````\n\n", false},
 		{"ThematicBreak", NewNode(NodeThematicBreak), "---\n\n", false},
 		{"HTML", &Node{Type: NodeHTML, Value: "<div>Test</div>"}, "<div>Test</div>\n\n", false},
 		{"Yaml", &Node{Type: NodeYaml, Value: "title: Test\ndate: 2023-05-01"}, "---\ntitle: Test\ndate: 2023-05-01\n---\n\n", false},
