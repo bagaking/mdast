@@ -112,7 +112,7 @@ func (n *Node) ToMarkdown(ctx context.Context) (string, error) {
 func phrasingChildrenToMarkdown(ctx context.Context, n *Node) (string, error) {
 	var result strings.Builder
 	for _, child := range n.PhrasingChildren {
-		childContent, err := InlineToMarkdown(ctx, child.(*Node))
+		childContent, err := phrasingChildToMarkdown(ctx, child)
 		if err != nil {
 			return "", err
 		}
@@ -121,15 +121,29 @@ func phrasingChildrenToMarkdown(ctx context.Context, n *Node) (string, error) {
 	return result.String(), nil
 }
 
+func phrasingChildToMarkdown(ctx context.Context, child PhrasingContent) (string, error) {
+	if childNode, ok := child.(*Node); ok {
+		return InlineToMarkdown(ctx, childNode)
+	}
+	return child.ToMarkdown(ctx)
+}
+
 // flowChildrenToMarkdown 将流式子节点转换为 Markdown 文本
 func flowChildrenToMarkdown(ctx context.Context, n *Node) (string, error) {
 	var result strings.Builder
 	for _, child := range n.FlowChildren {
-		childContent, err := FlowToMarkdown(ctx, child.(*Node))
+		childContent, err := flowChildToMarkdown(ctx, child)
 		if err != nil {
 			return "", err
 		}
 		result.WriteString(childContent)
 	}
 	return result.String(), nil
+}
+
+func flowChildToMarkdown(ctx context.Context, child FlowContent) (string, error) {
+	if childNode, ok := child.(*Node); ok {
+		return FlowToMarkdown(ctx, childNode)
+	}
+	return child.ToMarkdown(ctx)
 }

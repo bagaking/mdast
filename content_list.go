@@ -20,7 +20,7 @@ func ListToMarkdown(ctx context.Context, n *Node) (string, error) {
 		if child.GetType() != NodeListItem {
 			return "", fmt.Errorf("unexpected node type in list: %s", child.GetType())
 		}
-		itemContent, err := listItemToMarkdown(ctx, child.(*Node), start+i, ordered)
+		itemContent, err := listContentToMarkdown(ctx, child, start+i, ordered)
 		if err != nil {
 			return "", fmt.Errorf("error processing list item: %w", err)
 		}
@@ -32,6 +32,13 @@ func ListToMarkdown(ctx context.Context, n *Node) (string, error) {
 		separator = "\n\n"
 	}
 	return strings.Join(lines, separator) + "\n\n", nil
+}
+
+func listContentToMarkdown(ctx context.Context, child ListContent, index int, ordered bool) (string, error) {
+	if childNode, ok := child.(*Node); ok {
+		return listItemToMarkdown(ctx, childNode, index, ordered)
+	}
+	return child.ToMarkdown(ctx)
 }
 
 func listItemToMarkdown(ctx context.Context, n *Node, index int, ordered bool) (string, error) {
@@ -52,7 +59,7 @@ func listItemToMarkdown(ctx context.Context, n *Node, index int, ordered bool) (
 	}
 
 	for _, child := range n.FlowChildren {
-		childContent, err := FlowToMarkdown(ctx, child.(*Node))
+		childContent, err := flowChildToMarkdown(ctx, child)
 		if err != nil {
 			return "", fmt.Errorf("error processing list item child: %w", err)
 		}

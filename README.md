@@ -80,13 +80,11 @@ Output:
 ## Validation
 
 ```bash
-test -z "$(gofmt -l .)"
-go test ./...
-go vet ./...
-go list -f '{{.GoFiles}} {{.Imports}}' .
+make check
 ```
 
-The production package should not import `testing` or assertion libraries.
+`make check` runs formatting, tests, vet, and verifies the production package
+does not import `testing` or assertion libraries.
 
 ## License
 

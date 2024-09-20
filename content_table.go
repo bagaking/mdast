@@ -2,6 +2,7 @@ package mdast
 
 import (
 	"context"
+	"fmt"
 	"strings"
 )
 
@@ -14,15 +15,19 @@ func TableToMarkdown(ctx context.Context, n *Node) (string, error) {
 	}
 
 	for i, row := range n.TableChildren {
-		rowContent, err := TableRowToMarkdown(ctx, row.(*Node))
+		rowContent, err := tableRowContentToMarkdown(ctx, row)
 		if err != nil {
 			return "", err
 		}
 		result.WriteString(rowContent + "\n")
 		if i == 0 {
+			header, ok := row.(*Node)
+			if !ok {
+				return "", fmt.Errorf("cannot render table separator for header node type: %s", row.GetType())
+			}
 			result.WriteString("|")
 
-			for j := range n.TableChildren[0].(*Node).TableChildren {
+			for j := range header.TableChildren {
 				align := AlignNone
 				if j < len(alignments) {
 					align = alignments[j]
@@ -57,10 +62,24 @@ func TableCellToMarkdown(ctx context.Context, n *Node) (string, error) {
 	return phrasingChildrenToMarkdown(ctx, n)
 }
 
+func tableRowContentToMarkdown(ctx context.Context, child TableContent) (string, error) {
+	if childNode, ok := child.(*Node); ok {
+		return TableRowToMarkdown(ctx, childNode)
+	}
+	return child.ToMarkdown(ctx)
+}
+
+func tableCellContentToMarkdown(ctx context.Context, child TableContent) (string, error) {
+	if childNode, ok := child.(*Node); ok {
+		return TableCellToMarkdown(ctx, childNode)
+	}
+	return child.ToMarkdown(ctx)
+}
+
 func tableChildrenToMarkdownSlice(ctx context.Context, n *Node) ([]string, error) {
 	result := make([]string, len(n.TableChildren))
 	for i, child := range n.TableChildren {
-		content, err := TableCellToMarkdown(ctx, child.(*Node))
+		content, err := tableCellContentToMarkdown(ctx, child)
 		if err != nil {
 			return nil, err
 		}
