@@ -27,7 +27,7 @@ func TestTableWithAlignment(t *testing.T) {
 	assertMarkdown(t, "table with alignment", node, expected)
 }
 
-func TestTableCellEscapesPipes(t *testing.T) {
+func TestTableCellEscapesPipesAndLineBreaks(t *testing.T) {
 	table := NewNode(NodeTable)
 
 	header := NewNode(NodeTableRow)
@@ -58,7 +58,8 @@ func TestTableCellEscapesPipes(t *testing.T) {
 	row.AddTableChild(&Node{
 		Type: NodeTableCell,
 		PhrasingChildren: []PhrasingContent{
-			&Node{Type: NodeText, Value: `double \\| still literal`},
+			&Node{Type: NodeText, Value: "first line\r\nsecond line"},
+			&Node{Type: NodeText, Value: ` and double \\| still literal`},
 		},
 	})
 	table.AddTableChild(row)
@@ -73,13 +74,15 @@ func TestTableCellEscapesPipes(t *testing.T) {
 	codeRow.AddTableChild(&Node{
 		Type: NodeTableCell,
 		PhrasingChildren: []PhrasingContent{
-			&Node{Type: NodeText, Value: "plain"},
+			&Node{Type: NodeText, Value: "soft"},
+			&Node{Type: NodeBreak},
+			&Node{Type: NodeText, Value: "break"},
 		},
 	})
 	table.AddTableChild(codeRow)
 
-	expected := "| Name \\| Alias | Already \\| escaped |\n| --- | --- |\n| alpha*beta \\| gamma* | double \\\\\\| still literal |\n| `a\\|b` | plain |\n\n"
-	assertMarkdown(t, "table cell escapes pipes", table, expected)
+	expected := "| Name \\| Alias | Already \\| escaped |\n| --- | --- |\n| alpha*beta \\| gamma* | first line second line and double \\\\\\| still literal |\n| `a\\|b` | soft break |\n\n"
+	assertMarkdown(t, "table cell escapes pipes and line breaks", table, expected)
 }
 
 func TestDeepNestedStructure(t *testing.T) {

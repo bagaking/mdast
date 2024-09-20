@@ -63,7 +63,22 @@ func TableCellToMarkdown(ctx context.Context, n *Node) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return escapeTableCellPipes(content), nil
+	return escapeTableCellContent(content), nil
+}
+
+func escapeTableCellContent(content string) string {
+	return escapeTableCellPipes(normalizeTableCellLineBreaks(content))
+}
+
+func normalizeTableCellLineBreaks(content string) string {
+	if !strings.ContainsAny(content, "\r\n") {
+		return content
+	}
+	return strings.NewReplacer(
+		"\r\n", " ",
+		"\r", " ",
+		"\n", " ",
+	).Replace(content)
 }
 
 func escapeTableCellPipes(content string) string {
