@@ -80,7 +80,7 @@ Output:
 ## Validation
 
 ```bash
-gofmt -w *.go
+test -z "$(gofmt -l .)"
 go test ./...
 go vet ./...
 go list -f '{{.GoFiles}} {{.Imports}}' .
