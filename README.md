@@ -87,3 +87,7 @@ go list -f '{{.GoFiles}} {{.Imports}}' .
 ```
 
 The production package should not import `testing` or assertion libraries.
+
+## License
+
+See [LICENSE](LICENSE).
