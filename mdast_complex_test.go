@@ -63,7 +63,22 @@ func TestTableCellEscapesPipes(t *testing.T) {
 	})
 	table.AddTableChild(row)
 
-	expected := "| Name \\| Alias | Already \\| escaped |\n| --- | --- |\n| alpha*beta \\| gamma* | double \\\\\\| still literal |\n\n"
+	codeRow := NewNode(NodeTableRow)
+	codeRow.AddTableChild(&Node{
+		Type: NodeTableCell,
+		PhrasingChildren: []PhrasingContent{
+			&Node{Type: NodeInlineCode, Value: "a|b"},
+		},
+	})
+	codeRow.AddTableChild(&Node{
+		Type: NodeTableCell,
+		PhrasingChildren: []PhrasingContent{
+			&Node{Type: NodeText, Value: "plain"},
+		},
+	})
+	table.AddTableChild(codeRow)
+
+	expected := "| Name \\| Alias | Already \\| escaped |\n| --- | --- |\n| alpha*beta \\| gamma* | double \\\\\\| still literal |\n| `a\\|b` | plain |\n\n"
 	assertMarkdown(t, "table cell escapes pipes", table, expected)
 }
 
