@@ -27,6 +27,46 @@ func TestTableWithAlignment(t *testing.T) {
 	assertMarkdown(t, "table with alignment", node, expected)
 }
 
+func TestTableCellEscapesPipes(t *testing.T) {
+	table := NewNode(NodeTable)
+
+	header := NewNode(NodeTableRow)
+	header.AddTableChild(&Node{
+		Type: NodeTableCell,
+		PhrasingChildren: []PhrasingContent{
+			&Node{Type: NodeText, Value: "Name | Alias"},
+		},
+	})
+	header.AddTableChild(&Node{
+		Type: NodeTableCell,
+		PhrasingChildren: []PhrasingContent{
+			&Node{Type: NodeText, Value: `Already \| escaped`},
+		},
+	})
+	table.AddTableChild(header)
+
+	row := NewNode(NodeTableRow)
+	row.AddTableChild(&Node{
+		Type: NodeTableCell,
+		PhrasingChildren: []PhrasingContent{
+			&Node{Type: NodeText, Value: "alpha"},
+			&Node{Type: NodeEmphasis, PhrasingChildren: []PhrasingContent{
+				&Node{Type: NodeText, Value: "beta | gamma"},
+			}},
+		},
+	})
+	row.AddTableChild(&Node{
+		Type: NodeTableCell,
+		PhrasingChildren: []PhrasingContent{
+			&Node{Type: NodeText, Value: `double \\| still literal`},
+		},
+	})
+	table.AddTableChild(row)
+
+	expected := "| Name \\| Alias | Already \\| escaped |\n| --- | --- |\n| alpha*beta \\| gamma* | double \\\\\\| still literal |\n\n"
+	assertMarkdown(t, "table cell escapes pipes", table, expected)
+}
+
 func TestDeepNestedStructure(t *testing.T) {
 	root := NewNode(NodeRoot)
 	heading := createHeadingNode(1, "First level")

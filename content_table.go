@@ -59,7 +59,35 @@ func TableRowToMarkdown(ctx context.Context, n *Node) (string, error) {
 }
 
 func TableCellToMarkdown(ctx context.Context, n *Node) (string, error) {
-	return phrasingChildrenToMarkdown(ctx, n)
+	content, err := phrasingChildrenToMarkdown(ctx, n)
+	if err != nil {
+		return "", err
+	}
+	return escapeTableCellPipes(content), nil
+}
+
+func escapeTableCellPipes(content string) string {
+	if !strings.Contains(content, "|") {
+		return content
+	}
+
+	var result strings.Builder
+	result.Grow(len(content))
+	for i := 0; i < len(content); i++ {
+		if content[i] == '|' && !isEscapedMarkdownByte(content, i) {
+			result.WriteByte('\\')
+		}
+		result.WriteByte(content[i])
+	}
+	return result.String()
+}
+
+func isEscapedMarkdownByte(content string, index int) bool {
+	backslashes := 0
+	for i := index - 1; i >= 0 && content[i] == '\\'; i-- {
+		backslashes++
+	}
+	return backslashes%2 == 1
 }
 
 func tableRowContentToMarkdown(ctx context.Context, child TableContent) (string, error) {
