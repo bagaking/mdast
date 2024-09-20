@@ -40,6 +40,38 @@ func TestReferenceElements(t *testing.T) {
 	}
 }
 
+func TestDefinitionDestinationAndTitleEscaping(t *testing.T) {
+	testCases := []TestCase{
+		{
+			Name:     "Definition URL with space",
+			Node:     createDefinitionNode("example", "https://example.com/a b", ""),
+			Expected: "[example]: <https://example.com/a b>\n",
+		},
+		{
+			Name:     "Definition URL with closing paren",
+			Node:     createDefinitionNode("example", "https://example.com/a)b", ""),
+			Expected: "[example]: <https://example.com/a)b>\n",
+		},
+		{
+			Name:     "Definition title with quote and backslash",
+			Node:     createDefinitionNode("example", "https://example.com", `A "quoted" \ title`),
+			Expected: "[example]: https://example.com \"A \\\"quoted\\\" \\\\ title\"\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			result, err := tc.Node.ToMarkdown(context.Background())
+			if err != nil {
+				t.Fatalf("Node.ToMarkdown(%s) error = %v, want nil", tc.Name, err)
+			}
+			if result != tc.Expected {
+				t.Errorf("Node.ToMarkdown(%s) = %q, want %q", tc.Name, result, tc.Expected)
+			}
+		})
+	}
+}
+
 func TestReferenceTypes(t *testing.T) {
 	testCases := []struct {
 		name          string

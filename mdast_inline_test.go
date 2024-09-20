@@ -66,6 +66,43 @@ func TestInlineElements(t *testing.T) {
 	RunTestCases(t, testCases)
 }
 
+func TestLinkDestinationAndTitleEscaping(t *testing.T) {
+	testCases := []TestCase{
+		{
+			Name:     "Link URL with space",
+			Node:     createLinkNode("Example", "https://example.com/a b"),
+			Expected: "[Example](<https://example.com/a b>)",
+		},
+		{
+			Name:     "Link URL with closing paren",
+			Node:     createLinkNode("Example", "https://example.com/a)b"),
+			Expected: "[Example](<https://example.com/a)b>)",
+		},
+		{
+			Name:     "Link title with quote and backslash",
+			Node:     createLinkNodeWithTitle("Example", "https://example.com", `A "quoted" \ title`),
+			Expected: `[Example](https://example.com "A \"quoted\" \\ title")`,
+		},
+		{
+			Name:     "Image URL with space",
+			Node:     createImageNode("Alt text", "https://example.com/image one.png"),
+			Expected: "![Alt text](<https://example.com/image one.png>)",
+		},
+		{
+			Name:     "Image URL with closing paren",
+			Node:     createImageNode("Alt text", "https://example.com/image).png"),
+			Expected: "![Alt text](<https://example.com/image).png>)",
+		},
+		{
+			Name:     "Image title with quote and backslash",
+			Node:     createImageNodeWithTitle("Alt text", "https://example.com/image.png", `A "quoted" \ title`),
+			Expected: `![Alt text](https://example.com/image.png "A \"quoted\" \\ title")`,
+		},
+	}
+
+	RunTestCases(t, testCases)
+}
+
 func TestInlineCodeBacktickDelimiters(t *testing.T) {
 	testCases := []TestCase{
 		{

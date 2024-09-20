@@ -92,10 +92,11 @@ func linkToMarkdown(ctx context.Context, n *Node) (string, error) {
 	title, _ := n.Data.GetString(NDK_Title)
 	// 注意这里我们不检查 ok，因为 title 是可选的
 
+	destination := renderLinkDestination(url)
 	if title != "" {
-		return fmt.Sprintf("[%s](%s \"%s\")", text, url, title), nil
+		return fmt.Sprintf("[%s](%s %s)", text, destination, renderLinkTitle(title)), nil
 	}
-	return fmt.Sprintf("[%s](%s)", text, url), nil
+	return fmt.Sprintf("[%s](%s)", text, destination), nil
 }
 
 func imageToMarkdown(ctx context.Context, n *Node) (string, error) {
@@ -110,10 +111,30 @@ func imageToMarkdown(ctx context.Context, n *Node) (string, error) {
 	}
 
 	title, _ := n.Data.GetString(NDK_Title)
+	destination := renderLinkDestination(url)
 	if title != "" {
-		return fmt.Sprintf("![%s](%s \"%s\")", alt, url, title), nil
+		return fmt.Sprintf("![%s](%s %s)", alt, destination, renderLinkTitle(title)), nil
 	}
-	return fmt.Sprintf("![%s](%s)", alt, url), nil
+	return fmt.Sprintf("![%s](%s)", alt, destination), nil
+}
+
+func renderLinkDestination(destination string) string {
+	if !strings.ContainsAny(destination, " \t\n\r\f\v()") {
+		return destination
+	}
+	escaped := strings.NewReplacer(
+		`\`, `\\`,
+		`>`, `\>`,
+	).Replace(destination)
+	return "<" + escaped + ">"
+}
+
+func renderLinkTitle(title string) string {
+	escaped := strings.NewReplacer(
+		`\`, `\\`,
+		`"`, `\"`,
+	).Replace(title)
+	return `"` + escaped + `"`
 }
 
 func linkReferenceToMarkdown(ctx context.Context, n *Node) (string, error) {

@@ -100,10 +100,11 @@ func definitionToMarkdown(ctx context.Context, n *Node) (string, error) {
 		return "", fmt.Errorf("missing or invalid URL for definition")
 	}
 	title, _ := n.Data.GetString(NDK_Title)
+	destination := renderLinkDestination(url)
 	if title != "" {
-		return fmt.Sprintf("[%s]: %s \"%s\"\n", identifier, url, title), nil
+		return fmt.Sprintf("[%s]: %s %s\n", identifier, destination, renderLinkTitle(title)), nil
 	}
-	return fmt.Sprintf("[%s]: %s\n", identifier, url), nil
+	return fmt.Sprintf("[%s]: %s\n", identifier, destination), nil
 }
 
 func footnoteDefinitionToMarkdown(ctx context.Context, n *Node) (string, error) {
